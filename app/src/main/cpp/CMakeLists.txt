@@ -4,6 +4,23 @@
 # Sets the minimum version of CMake required to build the native library.
 cmake_minimum_required(VERSION 3.4.1)
 
+find_library( # Sets the name of the path variable.
+        log-lib
+
+        # Specifies the name of the NDK library that
+        # you want CMake to locate.
+        log)
+
+### ADD OBOE LIBRARY
+set(OBOE_DIR ../../../../oboe)
+add_subdirectory(${OBOE_DIR} ./oboe)
+include_directories(${OBOE_DIR}/include)
+
+### ADD LIBSNDFILE LIBRARY
+set(LIB_SND_FILE_DIR ../../../../libsndfile)
+add_subdirectory(${LIB_SND_FILE_DIR} ./sndfile)
+include_directories(${LIB_SND_FILE_DIR}/src)
+
 # Create a variable fluidsynth_DIR to specify where the fluidsynth library is located.
 set(fluidsynth_DIR ${CMAKE_CURRENT_SOURCE_DIR}/fluidsynth)
 
@@ -73,7 +90,12 @@ add_library(preloadable_libiconv SHARED IMPORTED)
 set_target_properties(preloadable_libiconv PROPERTIES IMPORTED_LOCATION ${fluidsynth_DIR}/lib/${ANDROID_ABI}/preloadable_libiconv.so)
 
 # Library that will be called directly from JAVA
-add_library(native-lib SHARED native-lib.cpp)
+add_library(native-lib SHARED
+        native-lib.cpp
+        SoundRecording.cpp
+        AudioEngine.cpp
+        RecordingCallback.cpp
+        PlayingCallback.cpp)
 
 # Specifies the directory where the C or C++ source coude will look the #include <yourlibrary.h> header files
 target_include_directories(native-lib PRIVATE ${fluidsynth_DIR}/include)
@@ -102,4 +124,6 @@ target_link_libraries(
         libvorbisfile
         libz
         preloadable_libiconv
+        oboe
+        sndfile
 )
