@@ -14,15 +14,15 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_fluidsynthandroidhelloworld_M
     fluid_synth_sfload(synth, soundfontPath, 1);
 
     fluid_synth_noteon(synth, 0, 60, 127); // play middle C
-    sleep(1); // sleep for 1 second
+    sleep(15); // sleep for 1 second
     fluid_synth_noteoff(synth, 0, 60); // stop playing middle C
 
     fluid_synth_noteon(synth, 0, 62, 127);
-    sleep(1);
+    sleep(15);
     fluid_synth_noteoff(synth, 0, 62);
 
     fluid_synth_noteon(synth, 0, 64, 127);
-    sleep(1);
+    sleep(15);
     fluid_synth_noteoff(synth, 0, 64);
 
     // Clean up
