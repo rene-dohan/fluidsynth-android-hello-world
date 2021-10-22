@@ -54,7 +54,7 @@ private:
     int16_t* mData = new int16_t[kMaxSamples]{0};
 
     // 6 Decibels gain on audio signal
-    int16_t gain_factor = 2;
+    int16_t gain_factor = 1;
 };
 
 #endif //OBOE_RECORDER_SOUNDRECORDING_H

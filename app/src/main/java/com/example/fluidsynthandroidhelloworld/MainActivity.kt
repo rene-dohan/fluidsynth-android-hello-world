@@ -7,6 +7,7 @@ import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import java.io.IOException
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -32,32 +33,63 @@ class MainActivity : AppCompatActivity() {
 
         val engine = AudioEngine()
         engine.create(1L)
-        main.postDelayed({
-            engine.startRecording()
+        later(1000) {
             print("startRecording")
-            main.postDelayed({
-
-                try {
-                    val tempSoundfontPath = copyAssetToTmpFile("sndfnt.sf2")
-                    fluidsynthHelloWorld(tempSoundfontPath)
-                } catch (e: IOException) {
-                    throw RuntimeException(e)
+            val task = object : TimerTask() {
+                override fun run() {
+                    try {
+                        engine.startRecording()
+                    } catch (e: IOException) {
+                        throw RuntimeException(e)
+                    }
                 }
 
-                engine.stopRecording()
-                print("stopRecording")
-                main.postDelayed({
-                    engine.startPlayingRecordedStream()
-                    print("startPlayingRecordedStream")
-                    main.postDelayed({
-                        engine.delete()
-                        print("AudioEngine.delete")
-                    }, 10000)
-                }, 3000)
-            }, 15000)
-        }, 3000)
+            }
+            Timer().schedule(task, 0)
+
+            Timer().schedule(object : TimerTask() {
+                override fun run() {
+                    try {
+                        val tempSoundfontPath = copyAssetToTmpFile("sndfnt.sf2")
+                        fluidsynthHelloWorld(tempSoundfontPath)
+                        engine.stopRecording()
+
+                        engine.startPlayingRecordedStream()
+                        print("startPlayingRecordedStream")
+                        later(8000) {
+                            engine.delete()
+                            print("AudioEngine.delete")
+                        }
+                    } catch (e: IOException) {
+                        throw RuntimeException(e)
+                    }
+                }
+
+            }, 0)
+//            print("startRecording")
+//            later(1000) {
+//
+//
+//                later(7000) {
+//                    engine.stopRecording()
+//                    print("stopRecording")
+//                    later(1000) {
+//                        engine.startPlayingRecordedStream()
+//                        print("startPlayingRecordedStream")
+//                        later(8000) {
+//                            engine.delete()
+//                            print("AudioEngine.delete")
+//                        }
+//                    }
+//                }
+//            }
+        }
 
 
+    }
+
+    fun later(delayMillis: Long, function: () -> Unit) {
+        main.postDelayed(function, delayMillis)
     }
 
     @Throws(IOException::class)

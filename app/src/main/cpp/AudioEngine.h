@@ -14,30 +14,39 @@
 #include "RecordingCallback.h"
 #include "PlayingCallback.h"
 #include <sndfile.h>
+#include <fluidsynth.h>
 
 
 class AudioEngine {
 
 public:
     AudioEngine();
+
     ~AudioEngine();
 
     RecordingCallback recordingCallback;
     PlayingCallback playingCallback = PlayingCallback(&mSoundRecording, &sndfileHandle);
 
-    void startRecording(JNIEnv *jniEnv,jobject object);
+    void startRecording(JNIEnv *jniEnv, jobject object,
+                        _fluid_synth_t *pSynth, fluid_settings_t *settings);
+
     void stopRecording();
+
     void startPlayingRecordedStream();
+
     void stopPlayingRecordedStream();
-    void startPlayingFromFile(const char* filePath);
+
+    void startPlayingFromFile(const char *filePath);
+
     void stopPlayingFromFile();
-    void writeToFile(const char* filePath);
+
+    void writeToFile(const char *filePath);
 
 private:
 
-    const char* TAG = "AudioEngine:: %s";
+    const char *TAG = "AudioEngine:: %s";
 
-    int32_t mRecordingDeviceId = oboe::Generic;
+    int32_t mRecordingDeviceId = oboe::VoiceRecognition;
 //    int32_t mPlaybackDeviceId = oboe::kUnspecified;
     int32_t mPlaybackDeviceId = 6;
 
@@ -53,18 +62,27 @@ private:
     SoundRecording mSoundRecording;
     SndfileHandle sndfileHandle;
 
-    void openRecordingStream();
+    void openRecordingStream(fluid_settings_t *settings);
+
     void openPlaybackStreamFromRecordedStreamParameters();
+
     void openPlaybackStreamFromFileParameters();
 
     void startStream(oboe::AudioStream *stream);
+
     void stopStream(oboe::AudioStream *stream);
+
     void closeStream(oboe::AudioStream *stream);
 
-    oboe::AudioStreamBuilder* setUpRecordingStreamParameters(oboe::AudioStreamBuilder* builder);
-    oboe::AudioStreamBuilder* setUpPlaybackStreamParameters(oboe::AudioStreamBuilder *builder,
-                                                            oboe::AudioApi audioApi, oboe::AudioFormat audioFormat, oboe::AudioStreamCallback *audioStreamCallback,
-                                                            int32_t deviceId, int32_t sampleRate, int channelCount);
+    oboe::AudioStreamBuilder *setUpRecordingStreamParameters(
+            oboe::AudioStreamBuilder *builder,fluid_settings_t *settings);
+
+    oboe::AudioStreamBuilder *setUpPlaybackStreamParameters(oboe::AudioStreamBuilder *builder,
+                                                            oboe::AudioApi audioApi,
+                                                            oboe::AudioFormat audioFormat,
+                                                            oboe::AudioStreamCallback *audioStreamCallback,
+                                                            int32_t deviceId, int32_t sampleRate,
+                                                            int channelCount);
 
 };
 

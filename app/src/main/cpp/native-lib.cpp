@@ -7,14 +7,17 @@
 
 const char *TAG = "jni_bridge:: %s";
 static AudioEngine *audioEngine = nullptr;
+static fluid_settings_t *settings = nullptr;
+static fluid_synth_t *synth = nullptr;
+//static fluid_audio_driver_t *adriver = nullptr;
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_fluidsynthandroidhelloworld_MainActivity_fluidsynthHelloWorld(JNIEnv *env, jobject,
                                                                                jstring jSoundfontPath) {
-    // Setup synthesizer
-    fluid_settings_t *settings = new_fluid_settings();
-    fluid_synth_t *synth = new_fluid_synth(settings);
-    fluid_audio_driver_t *adriver = new_fluid_audio_driver(settings, synth);
+//    // Setup synthesizer
+//    fluid_settings_t *settings = new_fluid_settings();
+//    fluid_synth_t *synth = new_fluid_synth(settings);
+//    fluid_audio_driver_t *adriver = new_fluid_audio_driver(settings, synth);
 
     // Load sample soundfont
     const char *soundfontPath = env->GetStringUTFChars(jSoundfontPath, nullptr);
@@ -33,7 +36,7 @@ Java_com_example_fluidsynthandroidhelloworld_MainActivity_fluidsynthHelloWorld(J
     fluid_synth_noteoff(synth, 0, 64);
 
     // Clean up
-    delete_fluid_audio_driver(adriver);
+//    delete_fluid_audio_driver(adriver);
     delete_fluid_synth(synth);
     delete_fluid_settings(settings);
 }
@@ -45,6 +48,18 @@ Java_com_example_fluidsynthandroidhelloworld_AudioEngine_create(
         JNIEnv *env, jobject obj, jlong native_value) {
 
     LOGD(TAG, "create(): ");
+    settings = new_fluid_settings();
+    fluid_settings_setint(settings, "synth.threadsafe-api", 1);
+    fluid_settings_setint(settings, "synth.cpu-cores", 3);
+    fluid_settings_setnum(settings, "synth.gain", 1.0);
+    fluid_settings_setint(settings, "synth.verbose", 0);
+    fluid_settings_setstr(settings, "audio.oboe.sharing-mode", "Exclusive");
+    fluid_settings_setstr(settings, "audio.oboe.performance-mode", "LowLatency");
+//    fluid_settings_setnum(settings, "synth.sample-rate", 48000.0);
+//    fluid_settings_setint(settings, "audio.period-size", 192);
+
+    synth = new_fluid_synth(settings);
+//    adriver = new_fluid_audio_driver(settings, synth);
 
     if (audioEngine == nullptr) {
         audioEngine = new AudioEngine();
@@ -73,7 +88,7 @@ Java_com_example_fluidsynthandroidhelloworld_AudioEngine_startRecording(JNIEnv *
         return;
     }
 
-    audioEngine->startRecording(env, obj);
+    audioEngine->startRecording(env, obj, synth, settings);
 
 }
 
@@ -92,7 +107,8 @@ Java_com_example_fluidsynthandroidhelloworld_AudioEngine_stopRecording(JNIEnv *e
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_fluidsynthandroidhelloworld_AudioEngine_startPlayingRecordedStream(JNIEnv *env, jobject) {
+Java_com_example_fluidsynthandroidhelloworld_AudioEngine_startPlayingRecordedStream(JNIEnv *env,
+                                                                                    jobject) {
 
     LOGD(TAG, "startPlayingRecordedStream(): ");
 
@@ -106,7 +122,8 @@ Java_com_example_fluidsynthandroidhelloworld_AudioEngine_startPlayingRecordedStr
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_fluidsynthandroidhelloworld_AudioEngine_stopPlayingRecordedStream(JNIEnv *env, jobject) {
+Java_com_example_fluidsynthandroidhelloworld_AudioEngine_stopPlayingRecordedStream(JNIEnv *env,
+                                                                                   jobject) {
 
     LOGD(TAG, "stopPlayingRecordedStream(): ");
 
@@ -120,7 +137,8 @@ Java_com_example_fluidsynthandroidhelloworld_AudioEngine_stopPlayingRecordedStre
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_fluidsynthandroidhelloworld_AudioEngine_writeFile(JNIEnv *env, jobject, jstring filePath) {
+Java_com_example_fluidsynthandroidhelloworld_AudioEngine_writeFile(JNIEnv *env, jobject,
+                                                                   jstring filePath) {
 
     LOGD(TAG, "writeFile(): filePath = ");
 //    LOGD(TAG, filePath);
@@ -139,7 +157,7 @@ Java_com_example_fluidsynthandroidhelloworld_AudioEngine_writeFile(JNIEnv *env, 
 
 JNIEXPORT void JNICALL
 Java_com_example_fluidsynthandroidhelloworld_AudioEngine_startPlayingFromFile(JNIEnv *env, jobject,
-                                                              jstring filePath) {
+                                                                              jstring filePath) {
 
     LOGD(TAG, "startPlayingFromFile(): filePath = ");
 //    LOGD(TAG, filePath);
@@ -157,7 +175,8 @@ Java_com_example_fluidsynthandroidhelloworld_AudioEngine_startPlayingFromFile(JN
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_fluidsynthandroidhelloworld_AudioEngine_stopPlayingFromFile(JNIEnv *env, jobject thiz) {
+Java_com_example_fluidsynthandroidhelloworld_AudioEngine_stopPlayingFromFile(JNIEnv *env,
+                                                                             jobject thiz) {
 
     LOGD(TAG, "stopPlayingFromFile(): ");
 

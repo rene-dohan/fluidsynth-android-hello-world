@@ -5,6 +5,17 @@
 oboe::DataCallbackResult
 RecordingCallback::onAudioReady(oboe::AudioStream *audioStream, void *audioData,
                                 int32_t numFrames) {
+    LOGD(TAG, "processRecordingFrames(): ");
+
+//    if (audioStream->getFormat() == oboe::AudioFormat::Float) {
+//        fluid_synth_write_float(synth, numFrames, static_cast<float *>(audioData), 0, 2,
+//                                static_cast<float *>(audioData), 1, 2);
+//    } else {
+        fluid_synth_write_s16(synth, numFrames, static_cast<short *>(audioData), 0, 2,
+                              static_cast<short *>(audioData), 1, 2);
+//    }
+
+    //    return oboe::DataCallbackResult::Continue;
     return processRecordingFrames(audioStream, static_cast<int16_t *>(audioData),
                                   numFrames * audioStream->getChannelCount());
 }

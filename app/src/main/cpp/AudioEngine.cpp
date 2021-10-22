@@ -16,13 +16,15 @@ AudioEngine::~AudioEngine() {
     closeStream(mPlaybackStream);
 }
 
-void AudioEngine::startRecording(JNIEnv *jniEnv,jobject object) {
+void AudioEngine::startRecording(
+        JNIEnv *jniEnv, jobject object,
+        _fluid_synth_t *pSynth, fluid_settings_t *settings) {
 
-    recordingCallback = RecordingCallback(&mSoundRecording);
+    recordingCallback = RecordingCallback(&mSoundRecording, pSynth);
 
     LOGD(TAG, "startRecording(): ");
 
-    openRecordingStream();
+    openRecordingStream(settings);
 
     if (mRecordingStream) {
         startStream(mRecordingStream);
@@ -105,13 +107,13 @@ void AudioEngine::writeToFile(const char *filePath) {
 
 }
 
-void AudioEngine::openRecordingStream() {
+void AudioEngine::openRecordingStream(fluid_settings_t *settings) {
 
     LOGD(TAG, "openRecordingStream(): ");
 
     oboe::AudioStreamBuilder builder;
 
-    setUpRecordingStreamParameters(&builder);
+    setUpRecordingStreamParameters(&builder, settings);
 
     oboe::Result result = builder.openStream(&mRecordingStream);
     if (result == oboe::Result::OK && mRecordingStream) {
@@ -261,20 +263,57 @@ void AudioEngine::closeStream(oboe::AudioStream *stream) {
 
 }
 
-oboe::AudioStreamBuilder *
-AudioEngine::setUpRecordingStreamParameters(oboe::AudioStreamBuilder *builder) {
+//oboe::AudioStreamBuilder *AudioEngine::setUpRecordingStreamParameters(
+//        oboe::AudioStreamBuilder *builder, fluid_settings_t *settings) {
+//
+//    LOGD(TAG, "setUpRecordingStreamParameters(): ");
+//
+//    builder->setAudioApi(mAudioApi)
+//            ->setFormat(mFormat)
+//            ->setSharingMode(oboe::SharingMode::Exclusive)
+//            ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
+//            ->setCallback(&recordingCallback)
+//            ->setDeviceId(mRecordingDeviceId)
+//            ->setDirection(oboe::Direction::Input)
+////            ->setSampleRate(mSampleRate)
+//            ->setChannelCount(mInputChannelCount);
+//    return builder;
+//}
 
+oboe::AudioStreamBuilder *AudioEngine::setUpRecordingStreamParameters(
+        oboe::AudioStreamBuilder *builder, fluid_settings_t *settings) {
     LOGD(TAG, "setUpRecordingStreamParameters(): ");
+    int period_frames;
+    double sample_rate;
+    int is_sample_format_float;
+    int device_id;
+    int sharing_mode; // 0: Shared, 1: Exclusive
+    int performance_mode; // 0: None, 1: PowerSaving, 2: LowLatency
 
-    builder->setAudioApi(mAudioApi)
-            ->setFormat(mFormat)
+    fluid_settings_getint(settings, "audio.period-size", &period_frames);
+    fluid_settings_getnum(settings, "synth.sample-rate", &sample_rate);
+    is_sample_format_float = fluid_settings_str_equal(settings, "audio.sample-format", "float");
+    fluid_settings_getint(settings, "audio.oboe.id", &device_id);
+    sharing_mode =
+            fluid_settings_str_equal(settings, "audio.oboe.sharing-mode", "Exclusive") ? 1 : 0;
+    performance_mode =
+            fluid_settings_str_equal(settings, "audio.oboe.performance-mode", "PowerSaving") ? 1 :
+            fluid_settings_str_equal(settings, "audio.oboe.performance-mode", "LowLatency") ? 2 : 0;
+
+    builder
+            ->setDeviceId(device_id)
+            ->setDirection(oboe::Direction::Output)
+            ->setChannelCount(oboe::ChannelCount::Stereo)
+            ->setBufferCapacityInFrames(256)
+            ->setSampleRate(sample_rate) //48000
+            ->setFramesPerCallback(period_frames)
+            ->setFormat(oboe::AudioFormat::I16)
             ->setSharingMode(oboe::SharingMode::Exclusive)
             ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
-            ->setCallback(&recordingCallback)
-            ->setDeviceId(mRecordingDeviceId)
-            ->setDirection(oboe::Direction::Input)
-//            ->setSampleRate(mSampleRate)
-            ->setChannelCount(mInputChannelCount);
+            ->setUsage(oboe::Usage::Media)
+            ->setContentType(oboe::ContentType::Music)
+            ->setAudioApi(mAudioApi)
+            ->setCallback(&recordingCallback);
     return builder;
 }
 
